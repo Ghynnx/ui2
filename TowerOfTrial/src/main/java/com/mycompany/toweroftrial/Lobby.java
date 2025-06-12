@@ -4,6 +4,8 @@
  */
 package com.mycompany.toweroftrial;
 
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author User
@@ -13,10 +15,17 @@ public class Lobby extends javax.swing.JFrame {
     /**
      * Creates new form Lobby
      */
-    public Lobby() {
+    private Player player;
+    private SaveData saveData = new SaveData();
+
+    public Lobby(Player player) {
+        this.player = player;
         initComponents();
     }
 
+    public Lobby() {
+        this(new Player("Demo", "Warrior"));
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -94,19 +103,33 @@ public class Lobby extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        // TODO add your handling code here:
+         new Tower(player).setVisible(true);
+        setVisible(false);
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        // TODO add your handling code here:
+       saveData.save(player);
+        JOptionPane.showMessageDialog(this, "Game saved!");                                        
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        // TODO add your handling code here:
+         System.exit(0);
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+        StringBuilder sb = new StringBuilder();
+        sb.append("Name: ").append(player.name).append(" (").append(player.playerClass).append(")\n");
+        sb.append("Level: ").append(player.level).append("\n");
+        sb.append("HP: ").append(player.hp).append(" / ").append(player.maxHp).append("\n");
+        sb.append("MP: ").append(player.mp).append(" / ").append(player.maxMp).append("\n");
+        sb.append("EXP: ").append(player.exp).append(" / ").append(player.expToNext).append("\n");
+        sb.append("Skills:\n");
+        int idx = 1;
+        for (Skill s : player.skills) {
+            sb.append("  ").append(idx++).append(". ").append(s.name).append(" - ").append(s.description).append("\n");
+        }
+        JOptionPane.showMessageDialog(this, sb.toString(), "Player Status", JOptionPane.INFORMATION_MESSAGE);                                                   
+         
     }//GEN-LAST:event_jButton1ActionPerformed
 
     /**

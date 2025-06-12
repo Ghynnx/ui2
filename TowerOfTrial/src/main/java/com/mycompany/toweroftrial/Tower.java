@@ -3,6 +3,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package com.mycompany.toweroftrial;
+import javax.swing.DefaultListModel;
+import javax.swing.JOptionPane;
+import java.util.*;
 
 /**
  *
@@ -10,13 +13,59 @@ package com.mycompany.toweroftrial;
  */
 public class Tower extends javax.swing.JFrame {
 
-    /**
-     * Creates new form Tower
-     */
-    public Tower() {
+    private Player player;
+
+    // Monster pool logic
+    private final HashMap<Integer, Queue<Monster>> floors = new HashMap<>();
+    private final HashMap<Integer, Queue<Monster>> floorTemplates = new HashMap<>();
+    private static final String[] monsterNames = {"Goblin", "Wolf", "Skeleton", "Orc", "Demon"};
+    private static final String[] bossNames = {"Goblin King", "Alpha Wolf", "Lich", "Orc Chieftain", "Demon Lord"};
+    private static final int[] floorLevelReq = {1, 3, 5, 7, 10}; // Floor 1: Lv1, Floor 2: Lv3, ...
+
+    // Floor display for JList
+    private DefaultListModel<String> model = new DefaultListModel<>();
+
+    public Tower(Player player) {
+        this.player = player;
+        initMonsterPools();
         initComponents();
+        updateFloorListDisplay();
+    }
+    public Tower() { this(new Player("Demo", "Warrior")); }
+
+    // Monster Pool Initialization
+    private void initMonsterPools() {
+        if (!floors.isEmpty()) return;
+        for (int f = 1; f <= 5; f++) {
+            Queue<Monster> templateQ = new LinkedList<>();
+            // 5 minions per floor
+            for (int i = 0; i < 5; i++) {
+                templateQ.add(new Monster(monsterNames[f - 1], 60 + f * 15, 20 + f * 5, 10 + f * 2, 15 + f * 3, false));
+            }
+            // 1 boss
+            templateQ.add(new Monster(bossNames[f - 1], 150 + f * 30, 40 + f * 10, 20 + f * 3, 30 + f * 8, true));
+            floorTemplates.put(f, templateQ);
+            floors.put(f, cloneFloor(templateQ));
+        }
     }
 
+    private Queue<Monster> cloneFloor(Queue<Monster> templateQ) {
+        Queue<Monster> newQ = new LinkedList<>();
+        for (Monster m : templateQ) {
+            Monster copy = new Monster(m.name, m.maxHp, m.maxMp, m.attack, m.expReward, m.isBoss);
+            newQ.add(copy);
+        }
+        return newQ;
+    }
+
+    private void updateFloorListDisplay() {
+        model.clear();
+        for (int i = 1; i <= 5; i++) {
+            String display = "Floor " + i + " (Lv." + floorLevelReq[i - 1] + "+)";
+            model.addElement(display);
+        }
+        jList1.setModel(model);
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -57,8 +106,18 @@ public class Tower extends javax.swing.JFrame {
         jLabel2.setText("Choose Floor Difficulty");
 
         jButton1.setText("Start");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
 
         jButton2.setText("Back");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -127,6 +186,44 @@ public class Tower extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+       int floorIdx = jList1.getSelectedIndex();
+        if (floorIdx == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a floor.");
+            return;
+        }
+        int floorNum = floorIdx + 1;
+        int requiredLevel = floorLevelReq[floorIdx];
+
+        if (player.level < requiredLevel) {
+            JOptionPane.showMessageDialog(this, "You need to be at least level " + requiredLevel + " to enter Floor " + floorNum + ".");
+            return;
+        }
+
+        Queue<Monster> pool = floors.get(floorNum);
+        if (pool == null || pool.isEmpty()) {
+            // Refill if needed
+            pool = cloneFloor(floorTemplates.get(floorNum));
+            floors.put(floorNum, pool);
+        }
+
+        Monster nextMonster = pool.poll();
+        if (nextMonster == null) {
+            JOptionPane.showMessageDialog(this, "All monsters on this floor are defeated! Please select another floor.");
+            return;
+        }
+
+        new Battleframe(player, nextMonster, floorNum).setVisible(true);
+        setVisible(false);
+
+                  
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        new Lobby(player).setVisible(true);
+        setVisible(false);
+    }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
      * @param args the command line arguments

@@ -4,12 +4,14 @@
  */
 package com.mycompany.toweroftrial;
 
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author User
  */
 public class MainMenu extends javax.swing.JFrame {
-
+      private SaveData saveData = new SaveData();
     /**
      * Creates new form MainMenu
      */
@@ -97,11 +99,17 @@ public class MainMenu extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-            // TODO add your handling code here:
+           System.exit(0);
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TODO add your handling code here:
+        Player loaded = saveData.load();
+            if (loaded != null) {
+                new Lobby(loaded).setVisible(true);
+                setVisible(false);
+            } else {
+                JOptionPane.showMessageDialog(this, "No save data found.");
+            }
     }//GEN-LAST:event_jButton2ActionPerformed
      
     /**

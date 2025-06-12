@@ -10,12 +10,27 @@ package com.mycompany.toweroftrial;
  */
 public class Battleframe extends javax.swing.JFrame {
 
-    /**
-     * Creates new form Battleframe
-     */
-    public Battleframe() {
+private Player player;
+    private Monster monster;
+    private int floorNumber;
+
+    // For launching from Tower
+    public Battleframe(Player player, Monster monster, int floorNumber) {
+        this.player = player;
+        this.monster = monster;
+        this.floorNumber = floorNumber;
         initComponents();
+        updateStatsDisplay();
+        jTextArea1.setText("A wild " + monster.name + " appears!");
     }
+
+    // For demo/test
+    public Battleframe() {
+        this(new Player("Demo", "Warrior"), new Monster("Goblin", 75, 25, 12, 15, false), 1);
+    }
+
+
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -73,6 +88,11 @@ public class Battleframe extends javax.swing.JFrame {
         });
 
         jButton2.setText("Skills");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         jButton3.setText("Flee");
         jButton3.addActionListener(new java.awt.event.ActionListener() {
@@ -152,15 +172,104 @@ public class Battleframe extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+        private void updateStatsDisplay() {
+        jLabel1.setText("Floor " + floorNumber);
+        jLabel2.setText(player.name + " (" + player.playerClass + ")");
+        jLabel3.setText("HP: " + player.hp + "/" + player.maxHp);
+        jLabel4.setText("MP: " + player.mp + "/" + player.maxMp);
+        jLabel5.setText("Level: " + player.level);
+        jLabel6.setText("EXP: " + player.exp + "/" + player.expToNext);
+        jLabel7.setText(monster.name);
+        jLabel8.setText("HP: " + monster.hp + "/" + monster.maxHp);
+        jLabel9.setText("MP: " + monster.mp + "/" + monster.maxMp);
+    }
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // TODO add your handling code here:
+        jTextArea1.setText("You fled the battle!");
+        disableBattleButtons();
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+        if (player.hp <= 0 || monster.hp <= 0) return;
+        int dmg = 25 + player.level * 3;
+        dmg = monster.applyPassive(dmg);
+        monster.hp -= dmg;
+        if (monster.hp < 0) monster.hp = 0;
+        jTextArea1.setText(player.name + " attacks " + monster.name + " and deals " + dmg + " damage!\n");
+        updateStatsDisplay();
+
+        if (monster.hp <= 0) {
+            jTextArea1.append("You have slain the " + monster.name + "!\nYou gained " + monster.expReward + " Exp!");
+            player.gainExp(monster.expReward);
+            disableBattleButtons();
+            updateStatsDisplay();
+            return;
+        }
+        monsterTurn();
     }//GEN-LAST:event_jButton1ActionPerformed
 
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+         if (player.hp <= 0 || monster.hp <= 0) return;
+        Skill skill = player.skills.get(0);
+        if (player.mp < skill.manaCost) {
+            jTextArea1.setText("Not enough MP to use " + skill.name + "!");
+            return;
+        }
+        int dmg = 40 + player.level * 4;
+        dmg = monster.applyPassive(dmg);
+        monster.hp -= dmg;
+        player.mp -= skill.manaCost;
+        if (monster.hp < 0) monster.hp = 0;
+        jTextArea1.setText(player.name + " uses " + skill.name + " and deals " + dmg + " damage!\n");
+        updateStatsDisplay();
+
+        if (monster.hp <= 0) {
+            player.gainExp(monster.expReward);
+            jTextArea1.append("You have slain the " + monster.name + "!\nYou gained " + monster.expReward + " Exp!");
+            disableBattleButtons();
+            updateStatsDisplay();
+            return;
+        }
+        monsterTurn();
+    }//GEN-LAST:event_jButton2ActionPerformed
+      private void monsterTurn() {
+        Skill mSkill = monster.chooseSkill();
+        if (mSkill == null) {
+            int mobAtk = monster.attack;
+            player.hp -= mobAtk;
+            if (player.hp < 0) player.hp = 0;
+            jTextArea1.append("\n" + monster.name + " attacks " + player.name + " for " + mobAtk + " damage!");
+        } else {
+            monster.mp -= mSkill.manaCost;
+            if (monster.isBoss) {
+                if (mSkill.name.contains("Roar")) {
+                    jTextArea1.append("\nBoss uses Roar! Your attack is reduced for 2 turns! (Demo only)");
+                } else if (mSkill.name.contains("Mega Slam")) {
+                    int dmg2 = monster.attack + 20;
+                    player.hp -= dmg2;
+                    if (player.hp < 0) player.hp = 0;
+                    jTextArea1.append("\nBoss uses Mega Slam! It deals " + dmg2 + " damage!");
+                }
+            } else {
+                int dmg2 = monster.attack + 5;
+                player.hp -= dmg2;
+                if (player.hp < 0) player.hp = 0;
+                jTextArea1.append("\n" + monster.name + " uses " + mSkill.name + " and deals " + dmg2 + " damage!");
+            }
+        }
+        updateStatsDisplay();
+
+        if (player.hp <= 0) {
+            jTextArea1.append("\nYou have been defeated!");
+            disableBattleButtons();
+        }
+    }
+
+    private void disableBattleButtons() {
+        jButton1.setEnabled(false);
+        jButton2.setEnabled(false);
+        jButton3.setEnabled(false);
+    }
     /**
      * @param args the command line arguments
      */

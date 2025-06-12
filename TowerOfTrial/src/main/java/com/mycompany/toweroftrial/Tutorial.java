@@ -4,6 +4,8 @@
  */
 package com.mycompany.toweroftrial;
 
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author User
@@ -13,17 +15,22 @@ public class Tutorial extends javax.swing.JFrame {
     /**
      * Creates new form Tutorial
      */
-    private Player player;
+      private Player player;
     private Monster monster;
     private int floorNumber = 1;
 
     public Tutorial(Player player) {
         this.player = player;
-        this.monster = new Monster("Goblin", 75, 25, 12, 17, 15, false);
+        this.monster = new Monster("Goblin", 75, 25, 12, 15, false);
         initComponents();
         updateStatsDisplay();
         jTextArea1.setText("A wild " + monster.name + " appears! Prepare for battle!");
-    } 
+    }
+
+    public Tutorial() {
+        this(new Player("Demo", "Warrior"));
+    }
+
 
 
     /**
@@ -174,7 +181,7 @@ public class Tutorial extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(329, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -187,10 +194,11 @@ public class Tutorial extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        jTextArea1.setText("You cannot flee the tutorial battle!");
+          jTextArea1.setText("You cannot flee the tutorial battle!");
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        if (!buttonsEnabled()) return;
         int dmg = 25 + player.level * 3;
         dmg = monster.applyPassive(dmg);
         monster.hp -= dmg;
@@ -199,24 +207,25 @@ public class Tutorial extends javax.swing.JFrame {
         updateStatsDisplay();
 
         if (monster.hp > 0) {
-            int mobAtk = monster.attack;
-            player.hp -= mobAtk;
-            if (player.hp < 0) player.hp = 0;
-            jTextArea1.append(monster.name + " attacks " + player.name + " for " + mobAtk + " damage!");
-            updateStatsDisplay();
+            monsterTurn();
         } else {
-            jTextArea1.append("\nYou have slain the " + monster.name + "!\nYou gained " + monster.expReward + " Exp and " + monster.goldReward + " Gold!");
-            // Optionally: disable buttons here
-            jButton1.setEnabled(false);
-            jButton2.setEnabled(false);
-            jButton3.setEnabled(false);
+            jTextArea1.append("\nYou have slain the " + monster.name + "!\nYou gained " + monster.expReward + " Exp!");
+            player.gainExp(monster.expReward);
+            disableBattleButtons();
+            int result = JOptionPane.showConfirmDialog(this, "You have completed the tutorial!\nProceed to the Lobby?", "Tutorial Complete", JOptionPane.YES_NO_OPTION);
+            if (result == JOptionPane.YES_OPTION) {
+                new Lobby(player).setVisible(true);
+                setVisible(false);
+            }
         }
+    
     
     
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-    Skills skill = player.skills.get(0);
+       if (!buttonsEnabled()) return;
+        Skill skill = player.skills.get(0);
         if (player.mp < skill.manaCost) {
             jTextArea1.setText("Not enough MP to use " + skill.name + "!");
             return;
@@ -230,21 +239,33 @@ public class Tutorial extends javax.swing.JFrame {
         updateStatsDisplay();
 
         if (monster.hp > 0) {
-            int mobAtk = monster.attack;
-            player.hp -= mobAtk;
-            if (player.hp < 0) player.hp = 0;
-            jTextArea1.append(monster.name + " attacks " + player.name + " for " + mobAtk + " damage!");
-            updateStatsDisplay();
+            monsterTurn();
         } else {
-            jTextArea1.append("\nYou have slain the " + monster.name + "!\nYou gained " + monster.expReward + " Exp and " + monster.goldReward + " Gold!");
-            // Optionally: disable buttons
-            jButton1.setEnabled(false);
-            jButton2.setEnabled(false);
-            jButton3.setEnabled(false);
-        }                              
+            jTextArea1.append("\nYou have slain the " + monster.name + "!\nYou gained " + monster.expReward + " Exp!");
+            player.gainExp(monster.expReward);
+            disableBattleButtons();
+            int result = JOptionPane.showConfirmDialog(this, "You have completed the tutorial!\nProceed to the Lobby?", "Tutorial Complete", JOptionPane.YES_NO_OPTION);
+            if (result == JOptionPane.YES_OPTION) {
+                new Lobby(player).setVisible(true);
+                setVisible(false);
+            }
+        }
 
     }//GEN-LAST:event_jButton2ActionPerformed
-     private void updateStatsDisplay() {
+    private void monsterTurn() {
+        int mobAtk = monster.attack;
+        player.hp -= mobAtk;
+        if (player.hp < 0) player.hp = 0;
+        jTextArea1.append(monster.name + " attacks " + player.name + " for " + mobAtk + " damage!");
+        updateStatsDisplay();
+
+        if (player.hp <= 0) {
+            jTextArea1.append("\nYou have been defeated! Please try again.");
+            disableBattleButtons();
+        }
+    }
+
+    private void updateStatsDisplay() {
         jLabel1.setText("Floor " + floorNumber);
         jLabel6.setText(player.name + " (" + player.playerClass + ")");
         jLabel2.setText("HP: " + player.hp + "/" + player.maxHp);
@@ -257,6 +278,15 @@ public class Tutorial extends javax.swing.JFrame {
         jLabel9.setText("MP: " + monster.mp + "/" + monster.maxMp);
     }
 
+    private void disableBattleButtons() {
+        jButton1.setEnabled(false);
+        jButton2.setEnabled(false);
+        jButton3.setEnabled(false);
+    }
+
+    private boolean buttonsEnabled() {
+        return jButton1.isEnabled() && jButton2.isEnabled();
+    }
     /**
      * @param args the command line arguments
      */
